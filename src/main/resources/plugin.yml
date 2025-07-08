@@ -1,0 +1,6 @@
+name: RTPDialog
+version: '1.0-SNAPSHOT'
+main: rune.biomeRTP.spigot.RTPPlugin
+api-version: '1.21'
+commands:
+  rtp:
