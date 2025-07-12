@@ -6,7 +6,6 @@ import alepando.dev.dialogapi.factory.button.data.ButtonData;
 import alepando.dev.dialogapi.factory.button.data.ButtonDataBuilder;
 import alepando.dev.dialogapi.factory.button.data.DataContainer;
 import alepando.dev.dialogapi.factory.button.data.KeyedAction;
-import alepando.dev.dialogapi.factory.data.DialogData;
 import alepando.dev.dialogapi.factory.data.DialogDataBuilder;
 import alepando.dev.dialogapi.executor.CustomKeyRegistry;
 import alepando.dev.dialogapi.factory.data.ResourceLocation;
@@ -19,8 +18,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
-import rune.biomeRTP.spigot.Dialog.RTPAction;
+import rune.biomeRTP.spigot.Dialog.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
@@ -32,13 +32,14 @@ public class EasyDialogUtil {
             CustomKeyRegistry.INSTANCE.register(
                     key,
                     new RTPAction(Path),
-                    Optional.empty()
+                    Optional.of(new ireader())
             );
             getLogger().info("Action 등록 성공: " + key);
         } catch (Exception e) {
             getLogger().warn("Action 등록 실패: " + e.getMessage());
         }
     }
+
     // 키 액션
     public static KeyedAction buildKeyedAction(String Namespace, String Path) {
         DataContainer container = new DataContainer();
@@ -76,7 +77,7 @@ public class EasyDialogUtil {
                 .build();
         return new Button(buttonData, Optional.ofNullable(action));
     }
-    
+
     // 체크 Input 
     public static BooleanInput buildToggleInput(String label, String key, boolean initial) {
         return new BooleanInputBuilder()
@@ -85,7 +86,7 @@ public class EasyDialogUtil {
                 .initial(initial)
                 .build();
     }
-    
+
     // 생성
     public static DialogDataBuilder createDialogBuilder(Component title) {
         return new DialogDataBuilder()
@@ -99,33 +100,32 @@ public class EasyDialogUtil {
             builder.addBody(new PlainMessageDialogBody(1024, Component.empty()));
         }
     }
-    
+
     // 다이얼로그 빌드 (최종시)
     public static MultiActionDialog buildEnhanceDialog(
             Component title,
-            Component[] bodyComponents,
-            Button[] buttons,
+            List<DialogElement> elements,
             BooleanInput[] inputs
     ) {
         DialogDataBuilder dialogBuilder = createDialogBuilder(title);
+        MultiActionDialogBuilder dialogBuilderFinal = new MultiActionDialogBuilder();
 
-        for (Component component : bodyComponents) {
-            dialogBuilder.addBody(new PlainMessageDialogBody(1024, component));
+        int buttonSize = 0;
+        for (DialogElement element : elements) {
+            if (element instanceof DialogText text) {
+                dialogBuilder.addBody(new PlainMessageDialogBody(1024, text.getComponent()));
+            } else if (element instanceof DialogButton btn) {
+                dialogBuilderFinal.addButton(btn.getButton());
+                buttonSize++;
+            }
+            else if (element instanceof DialogInput input) {
+                dialogBuilder.addInput(input.getButton());
+            }
         }
 
-        for (BooleanInput input : inputs) {
-            dialogBuilder.addInput(input);
-        }
+        dialogBuilderFinal.data(dialogBuilder.build());
+        dialogBuilderFinal.columns(64);
 
-        DialogData dialogData = dialogBuilder.build();
-
-        MultiActionDialogBuilder dialogBuilderFinal = new MultiActionDialogBuilder()
-                .data(dialogData)
-                .columns(buttons.length);
-
-        for (Button button : buttons) {
-            dialogBuilderFinal.addButton(button);
-        }
 
         return dialogBuilderFinal.build();
     }

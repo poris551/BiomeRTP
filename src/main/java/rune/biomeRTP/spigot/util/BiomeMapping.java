@@ -16,7 +16,7 @@ public class BiomeMapping {
         BIOME_MAP.put("JUNGLE", Biome.JUNGLE);
         BIOME_MAP.put("SAVANNA", Biome.SAVANNA);
         BIOME_MAP.put("SWAMP", Biome.SWAMP);
-        BIOME_MAP.put("CHERRY_GROVE", Biome.CHERRY_GROVE);
+        BIOME_MAP.put("SNOWY_PLAINS", Biome.SNOWY_PLAINS);
         BIOME_MAP.put("BEACH", Biome.BEACH);
     }
     public static Biome getBiome(String name) {

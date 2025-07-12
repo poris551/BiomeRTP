@@ -1,8 +1,6 @@
 package rune.biomeRTP.spigot.util;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -35,28 +33,48 @@ public class BiomeFinder {
 
         new BukkitRunnable() {
             int attempts = 0;
-            boolean found = false;
 
             @Override
             public void run() {
                 Location center = player.getLocation();
-                while (attempts < maxAttempts && !found) {
+
+                for (; attempts < maxAttempts; attempts++) {
                     int radius = 500 + Math.min(attempts * 100, 9500);
                     double randomX = center.getX() + (Math.random() * 2 * radius - radius);
                     double randomZ = center.getZ() + (Math.random() * 2 * radius - radius);
-                    int highestY = w.getHighestBlockYAt((int) randomX, (int) randomZ);
-                    Location loc = new Location(w, randomX, highestY, randomZ);
-                    if (w.getBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()) == targetBiome) {
-                        found = true;
-                        safeTeleport(player, loc);
-                        break;
+
+                    Biome biome = w.getBiome((int) randomX, 64, (int) randomZ);
+
+                    if (biome == targetBiome) {
+                        int finalAttempts = attempts;
+                        Bukkit.getScheduler().runTask(RTPPlugin.getInstance(), () -> {
+                            Location finalLoc = new Location(w, randomX, w.getHighestBlockYAt((int) randomX, (int) randomZ), randomZ);
+                            safeTeleport(player, finalLoc);
+                        });
+                        cancel();
+                        return;
                     }
-                    attempts++;
                 }
 
-                if (!found) {
-                    player.sendMessage(ChatColor.RED + "바이옴 찾기 실패");
-                }
+                Bukkit.getScheduler().runTask(RTPPlugin.getInstance(), () ->
+                        player.sendMessage(ChatColor.RED + "바이옴 찾기 실패")
+                );
+                Bukkit.getScheduler().runTask(RTPPlugin.getInstance(), () ->
+                        player.sendTitle("바이옴 찾기 실패", "", 0, 0, 0)
+                );
+                int x = player.getLocation().getBlockX()+1;
+                int y = player.getLocation().getBlockY()+1;
+                int z = player.getLocation().getBlockZ()+1;
+                int x2 = player.getLocation().getBlockX()-1;
+                int y2 = player.getLocation().getBlockY()-1;
+                int z2 = player.getLocation().getBlockZ()-1;
+                player.sendTitle("이동중 . . .", "§0\uF300", 0, 0, 30);
+                player.stopSound("minecraft:teleporting");
+                player.playSound(player.getLocation(), "minecraft:teleported", SoundCategory.MASTER, 1.0f, 1.0f);
+
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "particle minecraft:entity_effect{color:[0.996078431372549, 0.9921568627450981, 0.0, 0.984313725490196],scale:1f} "+x+" "+y+" "+z+" "+x2+" "+y2+" "+z2+" 0 1 force "+player.getName());
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "particle minecraft:entity_effect{color:[0.996078431372549, 0.9882352941176471, 0.0, 0.984313725490196],scale:1f} "+x+" "+y+" "+z+" "+x2+" "+y2+" "+z2+" 0 1 force "+player.getName());
+
                 cancel();
             }
         }.runTaskAsynchronously(RTPPlugin.getInstance());
@@ -69,6 +87,15 @@ public class BiomeFinder {
                 Location safeLoc = loc.clone();
                 safeLoc.setY(loc.getWorld().getHighestBlockYAt(loc.getBlockX(), loc.getBlockZ()) + 1);
                 player.teleport(safeLoc);
+                int x = player.getLocation().getBlockX()+1;
+                int y = player.getLocation().getBlockY()+1;
+                int z = player.getLocation().getBlockZ()+1;
+                int x2 = player.getLocation().getBlockX()-1;
+                int y2 = player.getLocation().getBlockY()-1;
+                int z2 = player.getLocation().getBlockZ()-1;
+                player.sendTitle("이동중 . . .", "§0\uF300", 0, 0, 30);
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "particle minecraft:entity_effect{color:[0.996078431372549, 0.9921568627450981, 0.0, 0.984313725490196],scale:1f} "+x+" "+y+" "+z+" "+x2+" "+y2+" "+z2+" 0 1 force "+player.getName());
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "particle minecraft:entity_effect{color:[0.996078431372549, 0.9882352941176471, 0.0, 0.984313725490196],scale:1f} "+x+" "+y+" "+z+" "+x2+" "+y2+" "+z2+" 0 1 force "+player.getName());
                 player.sendMessage(ChatColor.GREEN + safeLoc.getBlock().getBiome().translationKey() + " 바이옴 이동");
             }
         }.runTask(RTPPlugin.getInstance());
